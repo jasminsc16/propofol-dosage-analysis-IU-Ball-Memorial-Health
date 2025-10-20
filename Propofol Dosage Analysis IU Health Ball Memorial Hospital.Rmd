@@ -1,0 +1,776 @@
+---
+title: "Propofol Dosage Analysis IU Health Ball Memorial Hospital"
+author: "Jasmin Cooper"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#load datasets and libraries
+library(rsample)
+library(dplyr)
+library(tidyverse)
+library(naniar)
+library(corrplot)
+Propdata <- read_csv("propofoldata.csv")
+head(Propdata)
+#show(Propdata)
+#print(Propdata$Opiate_Tol)
+```
+
+# Creating Analysis Dataset 
+
+IBW, COVID, IVDA_Hx, Triglyc_Max, Creatinine, CrCl, Map_Range, and HR_Range_low will all be dropped from the analysis dataset since they are not relevant to the analysis being completed. 
+
+```{r}
+#creating analysis dataset
+df_eda <- select(Propdata, -c(IBW, COVID, IVDA_Hx,Triglyc_Max,Creatinine,CrCl,Map_Range,HR_Range_low))
+df_eda[df_eda=="x"] <- NA
+df_eda[df_eda=="X"] <- NA
+```
+
+
+x/X that represent NA/missing values is replaced with NA to be able to visualize and replace NA values.
+
+
+```{r}
+#visualizing and appropriately replacing missing variables
+vis_miss(df_eda[,1:12])
+df_eda$Height <- ifelse(is.na(df_eda$Height), "Missing", df_eda$Height)
+vis_miss(df_eda[,13:25])
+df_eda$Min_Rass <- ifelse(is.na(df_eda$Min_Rass), "NotApp", df_eda$Min_Rass)
+df_eda$Max_Rass <- ifelse(is.na(df_eda$Max_Rass), "NotApp", df_eda$Max_Rass)
+df_eda$Dex_ord <- ifelse(is.na(df_eda$Dex_ord), "NotApp", df_eda$Dex_ord)
+df_eda$Prop_dose_when_Dex <- ifelse(is.na(df_eda$Prop_dose_when_Dex), "NotApp", df_eda$Prop_dose_when_Dex)
+df_eda$Dex_rate_when_prop <- ifelse(is.na(df_eda$Dex_rate_when_prop), "NotApp", df_eda$Dex_rate_when_prop)
+df_eda$Prop_dec_afterDex <- ifelse(is.na(df_eda$Prop_dec_afterDex), "NotApp", df_eda$Prop_dec_afterDex)
+df_eda$Fent_before_prop <- ifelse(is.na(df_eda$Fent_before_prop), "NotApp", df_eda$Fent_before_prop)
+df_eda$Prop_dose_when_fent <- ifelse(is.na(df_eda$Prop_dose_when_fent), "NotApp", df_eda$Prop_dose_when_fent)
+df_eda$Fent_max_when_prop <- ifelse(is.na(df_eda$Fent_max_when_prop), "NotApp", df_eda$Fent_max_when_prop)
+df_eda$Prop_dec_after_fent <- ifelse(is.na(df_eda$Prop_dec_after_fent), "NotApp", df_eda$Prop_dec_after_fent)
+df_eda$Numb_fent_bolus <- ifelse(is.na(df_eda$Numb_fent_bolus), "NotApp", df_eda$Numb_fent_bolus)
+df_eda$Mode_CPOT <- ifelse(is.na(df_eda$Mode_CPOT), "NotApp", df_eda$Mode_CPOT)
+df_eda$Was_ket_ord <- ifelse(is.na(df_eda$Was_ket_ord), "NotApp", df_eda$Was_ket_ord)
+vis_miss(df_eda[,26:36])
+df_eda$Prop_dose_when_ket <- ifelse(is.na(df_eda$Prop_dose_when_ket), "NotApp", df_eda$Prop_dose_when_ket)
+df_eda$Ket_max_when_prop <- ifelse(is.na(df_eda$Ket_max_when_prop), "NotApp", df_eda$Ket_max_when_prop)
+df_eda$Was_prop_dec <- ifelse(is.na(df_eda$Was_prop_dec), "NotApp", df_eda$Was_prop_dec)
+df_eda$Con_Prop_NMBA <- ifelse(is.na(df_eda$Con_Prop_NMBA), "NotApp", df_eda$Con_Prop_NMBA)
+vis_miss(df_eda)
+View(df_eda)
+```
+
+
+# Exploratory Data Analysis 
+
+
+## Visualizing categorical variables
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=Org_Name, fill=Org_Name))
+```
+
+
+Most patients are from the IU Health Ball Memorial Hospital. This is helpful since this is where we are concentrating our analysis. 
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=factor(Sex), fill=factor(Sex)))
+```
+
+
+There are more males than females. 
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=factor(Home_Opiod), fill=factor(Home_Opiod)))
+```
+
+
+Most patients do not have home opiod usage.
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=factor(Home_Benzo), fill=factor(Home_Benzo)))
+```
+
+
+Most patients do not have home benzo usage. 
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=factor(Opiate_Tol), fill=factor(Opiate_Tol)))
+```
+
+
+Most patients have no tolerance for Opiate.
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=factor(Min_Rass), fill=factor(Min_Rass)))
+```
+
+
+Min RASS documented when propofol rate >50 mcg/kg/min. "The Richmond Agitation Sedation Scale (RASS) is an instrument designed to assess the level of alertness and agitated behavior in critically-ill patients." (1) Most patients minimum RASS when propofol rate >50 mcg/kg/min was that they were unarousable. Link to learn more about the scale: https://www.physio-pedia.com/Richmond_Agitation-Sedation_Scale_(RASS) 
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=factor(Max_Rass), fill=factor(Max_Rass)))
+```
+
+
+Max RASS documented when propofol rate >50 mcg/kg/min. "The Richmond Agitation Sedation Scale (RASS) is an instrument designed to assess the level of alertness and agitated behavior in critically-ill patients." (1) Most patients maximum RASS when propofol rate >50 mcg/kg/min was that they would pull at or attempt to remove tubes alongside generally aggressive behavior. Link to learn more about the scale: https://www.physio-pedia.com/Richmond_Agitation-Sedation_Scale_(RASS) 
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=factor(Dex_ord), fill=factor(Dex_ord)))
+```
+
+
+Dexmedetomidine was ordered before propofol rate reached >50 mcg/kg/min at any point. Most patients were not ordered dexmedetomidine. 
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=factor(Prop_dec_afterDex), fill=factor(Prop_dec_afterDex)))
+```
+
+
+Propofol was decreased to <50 mcg/kg/min after dexmedetomidine was added (did not go back above 50). Since most patients were not ordered dexmedetomidine, this is not applicable to most patients. 
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=factor(Fent_before_prop), fill=factor(Fent_before_prop)))
+```
+
+
+Fentanyl was ordered before propofol rate was >50 mcg/kg/min. Most patients did have fentanyl ordered for them before the propofol rate was >50 mcg/kg/min. 
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=factor(Prop_dec_after_fent), fill=factor(Prop_dec_after_fent)))
+```
+
+
+Propofol was decreased to <50 mcg/kg/min after fentanyl was added. This was not applicable to most patients. 
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=factor(Mode_CPOT), fill=factor(Mode_CPOT)))
+```
+
+
+Mode CPOT when propofol rate >50 mcg/kg/min . "The CPOT is a behavioural assessment pain scale for patients unable to verbalise pain." (2) Most patients had a mode CPOT of 0, which means that overall, the patient was relaxed, had no muscle tension, and had an absence of movement. Link to learn more about the scale: https://ccs-sth.org/resources/Documents/Sedation%20Analgesia%20Delirium%20in%20CC/CCS%20STH%20Guideline%20template%20CPOT.pdf
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=factor(Was_ket_ord), fill=factor(Was_ket_ord)))
+```
+
+
+Most patients did not have ketamine prescribed to them before propofol rate was >50 mcg/kg/min and out of the ones who did, most did not have it ordered.
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=factor(Was_prop_dec), fill=factor(Was_prop_dec)))
+```
+
+
+Since most patients did not have ketamine prescribed to them, it was not applicable to most patients if propofol decreased to <50 mcg/kg/min after ketamine was added or the dose was increased. 
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=factor(Rec_pain_med), fill=factor(Rec_pain_med)))
+```
+
+
+Most patients did not receive any scheduled pain medications when propofol >50 mcg/kg/min. 
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=factor(On_benzo), fill=factor(On_benzo)))
+```
+
+
+Most patients were not on scheduled benzo.
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=factor(Con_Prop_Vas), fill=factor(Con_Prop_Vas)))
+```
+
+
+More patients did not receive concurrent propofol and vasopressor when propofol >50 mcg/kg/min than those who did.
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=factor(Con_Prop_Dex), fill=factor(Con_Prop_Dex)))
+```
+
+
+More patients did not receive concurrent propofol and dexmedetomidine than those who did.
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=factor(Con_Prop_Fen), fill=factor(Con_Prop_Fen)))
+```
+
+
+More patients did receive concurrent propofol and fentanyl infusion than those who did not. 
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=factor(Con_Prop_Ket), fill=factor(Con_Prop_Ket)))
+```
+
+
+Most patients did not receive concurrent propofol and ketamine infusion. 
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=factor(Con_Prop_Ben), fill=factor(Con_Prop_Ben)))
+```
+
+
+Most patients did not receive concurrent propofol and benzodiazepine infusion.
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=factor(Con_Prop_NMBA), fill=factor(Con_Prop_NMBA)))
+```
+
+
+More patients did not receive concurrent propofol and NMBA infusion than those who did.
+
+
+## Visualizing covariation between two categorical variables 
+
+Creating initialisms of Org_Name values to make bar graphs easier to interpret.
+
+```{r}
+df_eda$Org_Name[df_eda$Org_Name=="IU Health Arnett Hospital"] <- 'IU HAH'
+```
+
+```{r}
+df_eda$Org_Name[df_eda$Org_Name=="IU Health Ball Memorial Hospital"] <- 'IU HBMH'
+```
+
+```{r}
+df_eda$Org_Name[df_eda$Org_Name=="IU Health Bloomington Hospital"] <- 'IU HBloomH'
+```
+
+```{r}
+df_eda$Org_Name[df_eda$Org_Name=="IU Health Methodist Hospital"] <- 'IU HMH'
+```
+
+```{r}
+df_eda$Org_Name[df_eda$Org_Name=="IU Health University Hospital"] <- 'IU HUH'
+```
+
+
+## Initialisms for hospital names:
+* IU Health Arnett Hospital <- 'IU HAH'
+* IU Health Ball Memorial Hospital <- 'IU HBMH'
+* IU Health Bloomington Hospital <- 'IU HBloomH'
+* IU Health Methodist Hospital <- 'IU HMH'
+* IU Health University Hospital <- 'IU HUH'
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=Org_Name, fill=factor(Home_Opiod)), position = "dodge")
+```
+
+
+The organization with the most patients that have home opiod usage is IU HBMH.
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=Org_Name, fill=factor(Home_Benzo)), position = "dodge")
+```
+
+
+The organization that has the most patients with home benzo usage is IU HBloomH.
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=Org_Name, fill=factor(Opiate_Tol)), position = "dodge")
+```
+
+
+IU HBMH has the most patients with high tolerance of opiates.
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=Org_Name, fill=factor(Prop_dec_afterDex)), position = "dodge")
+```
+
+
+Only IU HBMH and IU HBloomH had propofol decreases to <50 mcg/kg/min after dexmedetomidine was added.
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=Org_Name, fill=factor(Fent_before_prop)), position = "dodge")
+```
+
+
+IU HBMH had the highest number of fentanyl orders before propofol rate was >50 mcg/kg/min.
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=Org_Name, fill=factor(Prop_dec_after_fent)), position = "dodge")
+```
+
+
+Only IU HBloomH and IU HMH had propofol decreases to <50 mcg/kg/min after fentanyl was added.
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=Org_Name, fill=factor(Was_ket_ord)), position = "dodge")
+```
+
+
+IU HMH had the highest number of ketamine orders before propofol rate was >50 mcg/kg/min.
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=Org_Name, fill=factor(Was_prop_dec)), position = "dodge")
+```
+
+
+Propofol was only decreased to <50 mcg/kg/min after ketamine was added or dose increased at IU HBMH. 
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=Org_Name, fill=factor(Rec_pain_med)), position = "dodge")
+```
+
+
+Only patients at IU HMH and IU HUH received scheduled pain medications when propofol >50.
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=Org_Name, fill=factor(Con_Prop_Vas)), position = "dodge")
+```
+
+
+Patients received concurrent propofol and vasopressor when propofol >50 mcg/kg/min at IU HBMH, IU HMH, and IU HBloomH.
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=Org_Name, fill=factor(Con_Prop_Dex)), position = "dodge")
+```
+
+
+Only IU HUH did not have patients who received concurrent propofol and dexmedetomidine.
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=Org_Name, fill=factor(Con_Prop_Fen)), position = "dodge")
+```
+
+
+Concurrent propofol and fentanyl infusion is a popular choice at all organizations except IU HUH.
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=Org_Name, fill=factor(Con_Prop_Ket)), position = "dodge")
+```
+
+On the contrary, concurrent propofol and ketamine infusion was not a popular choice at the organizations.
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=Org_Name, fill=factor(Con_Prop_Ben)), position = "dodge")
+```
+
+
+IU HMH had the most patients that received concurrent propofol and benzodiazepine infusion.
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_bar(mapping = aes(x=Org_Name, fill=factor(Con_Prop_NMBA)), position = "dodge")
+```
+
+
+IU HBMH had the most patients that received concurrent propofol and NMBA infusion.
+
+
+## Visualizing continuous variables
+
+```{r}
+ggplot(data=df_eda)+
+  geom_histogram(mapping = aes(x = Age), binwidth = 3)
+```
+
+
+Most patients are between 50 and 70 years old.
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_histogram(mapping = aes(x = as.numeric(Height)), binwidth = 10)
+```
+
+
+Most patients are around 180cm in height (roughly 5 ft 11in).
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_histogram(mapping = aes(x = Weight), binwidth = 5)
+```
+
+
+Weights are pretty evenly distributed with a few obvious outliers.
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_histogram(mapping = aes(x = Total_days_prop), binwidth = 1)
+```
+
+
+Most patients were on propofol for 15 days or less, with a few outliers towards 20 days and 30 days. 
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_histogram(mapping = aes(x = Dur_prop_minutes), binwidth = 2000)
+```
+
+
+Most patients were on propofol for less than 10000 minutes (which is roughly less than a week) with a few higher outliers.
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_histogram(mapping = aes(x = Per_prop_over50), binwidth = 5)
+```
+
+
+The %  of time of propofol above 50 mcg/kg/min is relatively spread across patients.
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_histogram(mapping = aes(x = Max_Dose_Prop), binwidth = 3)
+```
+
+
+The max dose of propofol in mcg/kg/min greatly varies across patients.
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_histogram(mapping = aes(x = as.numeric(Prop_dose_when_Dex)), binwidth = 3)
+```
+
+
+This was not applicable to most patients, but for the patients where it was applicable, the propofol dose in mcg/kg/min when dexmedetomidine was added varied across patients.
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_histogram(mapping = aes(x = as.numeric(Dex_rate_when_prop)), binwidth = 0.25)
+```
+
+
+This was not applicable for most patients, but for the patients where it was applicable, the dexmedetomidine max rate in mcg/kg/hr when propofol >50 mcg/kg/min was usually around 0.5 mcg/kg/hr. 
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_histogram(mapping = aes(x = as.numeric(Prop_dose_when_fent)), binwidth = 0.25)
+```
+
+
+This was not applicable to most patients, but for the patients where it was applicable, the propofol dose in mcg/kg/min when fentanyl infusion was added was varied.
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_histogram(mapping = aes(x = as.numeric(Fent_max_when_prop)), binwidth = 5)
+```
+
+
+The fentanyl max rate in mcg/hr when propofol >50 mcg/kg/min was between 100-150 mcg/hr for most patients.
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_histogram(mapping = aes(x = as.numeric(Numb_fent_bolus)), binwidth = 5)
+```
+
+
+Most patients did not receive fentanyl bolus when propofol rate >50 mcg/kg/min.
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_histogram(mapping = aes(x = as.numeric(Prop_dose_when_ket)), binwidth = 3)
+```
+
+
+This was not applicable for most patients, but for the patients where it was applicable, the propofol dose in mcg/kg/min when fentanyl infusion was added was usually 50 mcg/kg/min or above. 
+
+
+```{r}
+ggplot(data=df_eda)+
+  geom_histogram(mapping = aes(x = as.numeric(Ket_max_when_prop)), binwidth = 0.25)
+```
+
+
+This was not applicable for most patients, but for the patients where it was applicable, the ketamine max rate in mcg/kg/hr when propofol >50 mcg/kg/min was spread between 0.0 to 2.0 mcg/kg/hr. 
+
+
+## Visualizing covariation between a categorical variable and a continuous variable
+
+The quantitative response variable I have chosen is Per_prop_over50, which is the % of time of propofol above 50 mcg/kg/min. Based off evaluating the EDA results, the selected covariates (explanatory variables) are: Home_Opiod, Home_Benzo, Opiate_Tol, Prop_dec_afterDex, Fent_before_prop, Prop_dec_after_fent, Was_prop_dec, Rec_pain_med, Con_Prop_Vas, Con_Prop_Dex, Con_Prop_Fen, Con_Prop_Ket, Con_Prop_Ben, and Con_Prop_NMBA. Below are some additional visualizations showing covariation between per_prop_over50 and the selected covariates.
+
+
+```{r}
+ggplot(data = df_eda, mapping = aes(x = factor(Org_Name), y = Per_prop_over50)) + geom_boxplot()
+```
+
+```{r}
+ggplot(data = df_eda, mapping = aes(x = factor(Home_Opiod), y = Per_prop_over50)) + geom_boxplot()
+```
+
+```{r}
+ggplot(data = df_eda, mapping = aes(x = factor(Home_Benzo), y = Per_prop_over50)) + geom_boxplot()
+```
+
+```{r}
+ggplot(data = df_eda, mapping = aes(x = factor(Opiate_Tol), y = Per_prop_over50)) + geom_boxplot()
+```
+
+```{r}
+ggplot(data = df_eda, mapping = aes(x = factor(Min_Rass), y = Per_prop_over50)) + geom_boxplot()
+```
+
+```{r}
+ggplot(data = df_eda, mapping = aes(x = factor(Max_Rass), y = Per_prop_over50)) + geom_boxplot()
+```
+
+```{r}
+ggplot(data = df_eda, mapping = aes(x = factor(Dex_ord), y = Per_prop_over50)) + geom_boxplot()
+```
+
+```{r}
+ggplot(data = df_eda, mapping = aes(x = factor(Prop_dec_afterDex), y = Per_prop_over50)) + geom_boxplot()
+```
+
+```{r}
+ggplot(data = df_eda, mapping = aes(x = factor(Fent_before_prop), y = Per_prop_over50)) + geom_boxplot()
+```
+
+```{r}
+ggplot(data = df_eda, mapping = aes(x = factor(Mode_CPOT), y = Per_prop_over50)) + geom_boxplot()
+```
+
+```{r}
+ggplot(data = df_eda, mapping = aes(x = factor(Was_ket_ord), y = Per_prop_over50)) + geom_boxplot()
+```
+
+```{r}
+ggplot(data = df_eda, mapping = aes(x = factor(Was_prop_dec), y = Per_prop_over50)) + geom_boxplot()
+```
+
+```{r}
+ggplot(data = df_eda, mapping = aes(x = factor(Rec_pain_med), y = Per_prop_over50)) + geom_boxplot()
+```
+
+```{r}
+ggplot(data = df_eda, mapping = aes(x = factor(On_benzo), y = Per_prop_over50)) + geom_boxplot()
+```
+
+```{r}
+ggplot(data = df_eda, mapping = aes(x = factor(Con_Prop_Vas), y = Per_prop_over50)) + geom_boxplot()
+```
+
+```{r}
+ggplot(data = df_eda, mapping = aes(x = factor(Con_Prop_Dex), y = Per_prop_over50)) + geom_boxplot()
+```
+
+```{r}
+ggplot(data = df_eda, mapping = aes(x = factor(Con_Prop_Fen), y = Per_prop_over50)) + geom_boxplot()
+```
+
+```{r}
+ggplot(data = df_eda, mapping = aes(x = factor(Con_Prop_Ket), y = Per_prop_over50)) + geom_boxplot()
+```
+
+```{r}
+ggplot(data = df_eda, mapping = aes(x = factor(Con_Prop_Ben), y = Per_prop_over50)) + geom_boxplot()
+```
+
+```{r}
+ggplot(data = df_eda, mapping = aes(x = factor(Con_Prop_NMBA), y = Per_prop_over50)) + geom_boxplot()
+```
+
+# Fitting GLM by selecting a quantitative response variable column and a set of covariates
+
+The quantitative response variable I have chosen is Per_prop_over50, which is the % of time of propofol above 50 mcg/kg/min. The selected covariates (explanatory variables) are: Home_Opiod, Home_Benzo, Opiate_Tol, Prop_dec_afterDex, Fent_before_prop, Prop_dec_after_fent, Was_prop_dec, Rec_pain_med, Con_Prop_Vas, Con_Prop_Dex, Con_Prop_Fen, Con_Prop_Ket, Con_Prop_Ben, and Con_Prop_NMBA.
+
+
+```{r}
+glm_mod1 <- glm(Per_prop_over50~ Home_Opiod+Opiate_Tol+Dex_ord+Prop_dose_when_Dex+Fent_before_prop+Prop_dec_after_fent+Mode_CPOT+Was_ket_ord+Rec_pain_med+On_benzo+Con_Prop_Vas+Con_Prop_Dex+Con_Prop_Ket+Con_Prop_Ben+Con_Prop_NMBA ,data=df_eda,family="gaussian")
+summary(glm_mod1)
+```
+
+
+*Creating new model with the removal of home_opiod, opiate_tol, dex_ord, fent_before_prop, on_benzo, con_prop_vas, con_prop_dex, and con_prop_ket due to insignificance.*
+
+
+```{r}
+glm_mod2 <- glm(Per_prop_over50~ Prop_dose_when_Dex+Prop_dec_after_fent+Mode_CPOT+Was_ket_ord+Rec_pain_med+Con_Prop_Ben+Con_Prop_NMBA ,data=df_eda,family="gaussian")
+summary(glm_mod2)
+```
+
+
+*Creating a new model with the removal of was_ket_ord and rec_pain_med due to insignificance.* 
+
+
+```{r}
+glm_mod3 <- glm(Per_prop_over50~ Prop_dose_when_Dex+Prop_dec_after_fent+Mode_CPOT+Con_Prop_Ben+Con_Prop_NMBA ,data=df_eda,family="gaussian")
+summary(glm_mod3)
+```
+
+
+*Creating a new model with the removal of con_prop_ben and con_prop_NMBA due to insignificance.*
+
+
+```{r}
+glm_mod4 <- glm(Per_prop_over50~ Prop_dose_when_Dex+Prop_dec_after_fent+Mode_CPOT ,data=df_eda,family="gaussian")
+summary(glm_mod4)
+```
+
+## Performing variable selection using deviance tables
+
+```{r}
+anova(glm_mod4,test="Chisq")
+```
+
+
+**The final model for the % of time of propofol above 50 mcg/kg/min (Per_prop_over50) based on the deviance table can be written as follows:**
+
+**Per_prop_over50 = 0.241 + 2.961 * Prop_dose_when_Dex + 3.334 * Mode_CPOT**
+
+
+```{r}
+glm_mod5 <- glm(Per_prop_over50~ Prop_dose_when_Dex+Mode_CPOT,data=df_eda,family="gaussian")
+summary(glm_mod5)
+```
+
+
+## Running diagnostics and checking model adequacy
+
+```{r}
+par(mfrow=c(2,2))
+plot(glm_mod5)
+```
+
+## Evaluating evidence of interaction between a quantitative and a qualitative variable 
+
+There is evidence of interaction between a quantitative predictor and a qualitative predictor based off the EDA. There seems to be some evidence of interaction between the total days on propofol infusion (Total_days_prop) (quantitative) and the organization (Org_Name) (qualitative). An ANCOVA will be run.
+
+
+```{r}
+#Starting with ANOVA
+Propdata_anova = select(df_eda, Per_prop_over50,Org_Name, Total_days_prop)
+glm_anova <- glm(Per_prop_over50~ factor(Org_Name),data=Propdata_anova,family="gaussian")
+summary(glm_anova)
+```
+
+
+There is a small amount of significance when the organization name is 'IU HBMH', which matches with the findings so far. 
+
+
+```{r}
+#Running ANCOVA
+glm_ancova <- glm(Per_prop_over50~ factor(Org_Name) + Total_days_prop, data=Propdata_anova,family="gaussian")
+summary(glm_ancova)
+anova(glm_ancova)
+```
+
+
+Once again, there is a small amount of significance when the organization name is 'IU HBMH', which matches with the findings so far. 
+
+
+```{r}
+#interaction between the total days on propofol infusion (Total_days_prop) (quantitative) and the organization (Org_Name) (qualitative)
+par(mar=c(1,1,1,1))
+par(mfrow=c(1,1))
+ggplot(data = Propdata_anova, aes(x=Total_days_prop, y=Per_prop_over50, color=factor(Org_Name)))+
+  geom_point() + geom_smooth() + xlab("total days on propofol infusion (Total_days_prop)") + ylab("% of time of propofol above 50 mcg/kg/min (Per_prop_over50)")
+```
+
+```{r}
+#testing for interaction
+glm_ancova1 <- glm(Per_prop_over50~ factor(Org_Name) + Total_days_prop +factor(Org_Name)*Total_days_prop, data=Propdata_anova, family="gaussian")
+summary(glm_ancova1)
+```
+
+```{r}
+#running model diagnostics
+anova(glm_ancova, glm_ancova1)
+```
+
+
+The interaction term is significant as the difference in deviance between the larger model and the smaller model is statistically significant. 
+
+**Final model with interaction term is as follows:**
+
+**Per_prop_over50 = 0.241 + 2.961 * Prop_dose_when_Dex + 3.334 * Mode_CPOT - 0.518 * Total_days_prop**
+
+
+The final explanatory variables for the % of time of propofol above 50 mcg/kg/min are Prop_dose_when_dex, Mode_CPOT, and Total_days_prop.
+
+
+# Bibliography
+
+
+(1) Physiopedia. (n.d.). Richmond agitation-sedation scale (RASS). Physiopedia. https://www.physio-pedia.com/Richmond_Agitation-Sedation_Scale_(RASS) Description of Richmond Agitation-Sedation Scale (RASS).
+
+(2) South Tees Hospitals NHS FT. (2023, January 20). CPOT = Critical-Care Pain Observation Tool. Critical Care Services - The James Cook University Hospital. https://ccs-sth.org/resources/Documents/Sedation Analgesia Delirium in CC/CCS STH Guideline template CPOT.pdf Description of CPOT = Critical-Care Pain Observation Tool.
+
