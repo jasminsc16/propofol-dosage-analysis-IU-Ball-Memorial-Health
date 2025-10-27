@@ -23,3 +23,10 @@ The R Code used to create the cleaned analysis dataset, perform the exploratory 
 The hospital's extracted data from the electronic medical record (EMR) system as seen below consists of one table with a total row count of 72 and a total column count of 44. IBW, COVID, IVDA_Hx, Triglyc_Max, Creatinine, CrCl, Map_Range, and HR_Range_low will all be dropped from the final analysis dataset since they are not relevant to the analysis being completed. So, the official total column count is 36. A description of the table is as follows:
 
 ![Propofol Project_Data Structure Table](https://github.com/user-attachments/assets/bbf683ed-1210-4e6d-b52a-6bdf7d3f0f3d)
+
+To prepare the dataset for analysis, an initial data cleaning process was conducted. Variables not relevant to the study’s objectives — including IBW, COVID, IVDA_Hx, Triglyc_Max, Creatinine, CrCl, Map_Range, and HR_Range_low — were removed to streamline the analysis dataset. Placeholder entries “x” and “X” were standardized to NA values to ensure consistency in identifying missing data.
+
+Patterns of missingness were then visualized using vis_miss(), and appropriate replacements were applied based on variable context (e.g., “Missing” for Height and “NotApp” for non-applicable clinical measures such as Min_Rass, Dex_ord, and Prop_dose_when_Dex).
+
+Prior to this stage, the dataset was recovered from a corrupted RDS file and automatically transferred to Excel using an AI-assisted data extraction workflow (Claude), ensuring data integrity and preserving all relevant records for subsequent analysis.
+
