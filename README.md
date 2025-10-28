@@ -7,11 +7,11 @@ Insights and recommendations are provided on the following key areas:
 
 •	**Propofol Outcome Measures:** An analysis of the duration and frequency of high dose propofol use (>50 mcg/kg/min), including total infusion hours/days on infusion.
 
-•	**Patient Characteristics Analysis:** Evaluation of demographic factors: sex, age, height, and weight.
+• **IU Health Hospitals Comparisons:** An evaluation of propofol and co-administered sedatives across IU Health hospitals to identify system-wide variation.
 
 •	**Co-Administered Sedatives:** An assessment of pain management effectiveness (measured by RASS or CPOT) in conjunction with sedatives such as dexmedetomidine and fentanyl.
 
-•	**IU Health Hospitals Comparisons:** An evaluation of propofol and co-administered sedatives across IU Health hospitals to identify system-wide variation.
+•	**Patient Characteristics Analysis:** Evaluation of demographic factors: sex, age, height, and weight.
 
 
 The R Code used to create the cleaned analysis dataset, perform the exploratory data analysis, perform variable selection, fit the GLM, and evaluate evidence of interaction can be found here: [Propofol Dosage Analysis R Code](https://github.com/jasminsc16/propofol-dosage-analysis-IU-Health-Ball-Memorial-Hospital/blob/main/Propofol%20Dosage%20Analysis%20IU%20Health%20Ball%20Memorial%20Hospital.Rmd)
