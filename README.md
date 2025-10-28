@@ -14,7 +14,7 @@ Insights and recommendations are provided on the following key areas:
 •	**Patient Characteristics Analysis:** Evaluation of demographic factors: sex, age, height, and weight.
 
 
-The R Code used to create the cleaned analysis dataset, perform the exploratory data analysis, perform variable selection, fit the GLM, and evaluate evidence of interaction can be found here: [Propofol Dosage Analysis R Code](https://github.com/jasminsc16/propofol-dosage-analysis-IU-Health-Ball-Memorial-Hospital/blob/main/Propofol%20Dosage%20Analysis%20IU%20Health%20Ball%20Memorial%20Hospital.Rmd)
+The R code used to create the cleaned analysis dataset, perform the exploratory data analysis, perform variable selection, fit the GLM, and evaluate evidence of interaction can be found here: [Propofol Dosage Analysis R Code](https://github.com/jasminsc16/propofol-dosage-analysis-IU-Health-Ball-Memorial-Hospital/blob/main/Propofol%20Dosage%20Analysis%20IU%20Health%20Ball%20Memorial%20Hospital.Rmd)
 
 
 
